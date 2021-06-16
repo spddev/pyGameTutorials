@@ -47,6 +47,11 @@ class Player(pygame.sprite.Sprite):
         if self.rect.left < 0:
             self.rect.left = 0
 
+            
+all_sprites = pygame.sprite.Group()
+player = Player()
+all_sprites.add(player)
+
 
 
 
@@ -60,8 +65,10 @@ while running:
             running = False
     # Обновление
     clock.tick(FPS)
+    all_sprites.update()
     # Рэндер/отрисовка
     screen.fill(BLACK)
+    all_sprites.draw(screen)
     # *после* отрисовки чего-либо на экране, переворачиваем наш дисплей
     pygame.display.flip()
 
