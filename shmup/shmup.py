@@ -3,34 +3,28 @@ import pygame
 import random
 from os import path
 
-WIDTH = 480 # ширина окна с игрой
-HEIGHT = 600 # высота окна с игрой
+# Задаём путь до каталога с изображениями
+img_dir = path.join(path.dirname(__file__), 'img')
+
+# параметры игрового окна
+WIDTH = 480 # ширина
+HEIGHT = 600 # высота
 FPS = 60 # частота кадров в секунду
 
-# Цвета (R, G, B)
-BLACK = (0, 0, 0)
+# определение основных цветов
 WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 YELLOW = (255, 255, 0)
-# Задаём путь до каталога с изображениями
-img_dir = path.join(path.dirname(__file__), 'img')
 
-# инициализация pygame и создание окна
+# инициализация pygame создание окна
 pygame.init()
-pygame.mixer.init() # для проигрывания звуков в игре
+pygame.mixer.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Space Shooter")
+pygame.display.set_caption("Shmup!")
 clock = pygame.time.Clock()
-
-# Загрузка всей игровой графики
-background = pygame.image.load(path.join(img_dir, 'starfield.png')).convert()
-background_rect = background.get_rect()
-player_img = pygame.image.load(path.join(img_dir, 'playerShip1_orange.png')).convert()
-meteor_img = pygame.image.load(path.join(img_dir, 'meteorBrown_med1.png')).convert()
-bullet_img = pygame.image.load(path.join(img_dir, 'laserRed16.png')).convert()
-
 
 class Player(pygame.sprite.Sprite):
     def __init__(self):
@@ -40,7 +34,7 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.radius = 20
         # pygame.draw.circle(self.image, RED, self.rect.center, self.radius)
-        self.rect.centerx = WIDTH/2
+        self.rect.centerx = WIDTH / 2
         self.rect.bottom = HEIGHT - 10
         self.speedx = 0
 
@@ -66,25 +60,39 @@ class Player(pygame.sprite.Sprite):
 class Mob(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
-        self.image = meteor_img
-        self.image.set_colorkey(BLACK)
+        self.image_orig = random.choice(meteor_images)
+        self.image_orig.set_colorkey(BLACK)
+        self.image = self.image_orig.copy()
         self.rect = self.image.get_rect()
         self.radius = int(self.rect.width * .85 / 2)
         # pygame.draw.circle(self.image, RED, self.rect.center, self.radius)
         self.rect.x = random.randrange(WIDTH - self.rect.width)
-        self.rect.y = random.randrange(-100, -40)
+        self.rect.y = random.randrange(-150, -100)
         self.speedy = random.randrange(1, 8)
         self.speedx = random.randrange(-3, 3)
+        self.rot = 0
+        self.rot_speed = random.randrange(-8, 8)
+        self.last_update = pygame.time.get_ticks()
+
+    def rotate(self):
+        now = pygame.time.get_ticks()
+        if now - self.last_update > 50:
+            self.last_update = now
+            self.rot = (self.rot + self.rot_speed) % 360
+            new_image = pygame.transform.rotate(self.image_orig, self.rot)
+            old_center = self.rect.center
+            self.image = new_image
+            self.rect = self.image.get_rect()
+            self.rect.center = old_center
 
     def update(self):
+        self.rotate()
         self.rect.x += self.speedx
         self.rect.y += self.speedy
-        if self.rect.top > HEIGHT + 10 or self.rect.left < -25 or \
-                self.rect.right > WIDTH + 20:
+        if self.rect.top > HEIGHT + 10 or self.rect.left < -25 or self.rect.right > WIDTH + 20:
             self.rect.x = random.randrange(WIDTH - self.rect.width)
             self.rect.y = random.randrange(-100, -40)
             self.speedy = random.randrange(1, 8)
-
 
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, x, y):
@@ -98,10 +106,21 @@ class Bullet(pygame.sprite.Sprite):
 
     def update(self):
         self.rect.y += self.speedy
-        # Убираем спрайт, если он переместился за нижнюю границу экрана
+        # kill if it moves off the top of the screen
         if self.rect.bottom < 0:
             self.kill()
 
+# Load all game graphics
+background = pygame.image.load(path.join(img_dir, "starfield.png")).convert()
+background_rect = background.get_rect()
+player_img = pygame.image.load(path.join(img_dir, "playerShip1_orange.png")).convert()
+bullet_img = pygame.image.load(path.join(img_dir, "laserRed16.png")).convert()
+meteor_images = []
+meteor_list = ['meteorBrown_big1.png', 'meteorBrown_med1.png', 'meteorBrown_med1.png',
+               'meteorBrown_med3.png', 'meteorBrown_small1.png', 'meteorBrown_small2.png',
+               'meteorBrown_tiny1.png']
+for img in meteor_list:
+    meteor_images.append(pygame.image.load(path.join(img_dir, img)).convert())
 
 all_sprites = pygame.sprite.Group()
 mobs = pygame.sprite.Group()
@@ -113,45 +132,40 @@ for i in range(8):
     all_sprites.add(m)
     mobs.add(m)
 
-# Загрузка всей игровой графики
-background = pygame.image.load(path.join(img_dir, 'starfield.png')).convert()
-background_rect = background.get_rect()
-player_img = pygame.image.load(path.join(img_dir, 'playerShip1_orange.png')).convert()
-meteor_img = pygame.image.load(path.join(img_dir, 'meteorBrown_med1.png')).convert()
-bullet_img = pygame.image.load(path.join(img_dir, 'laserRed16.png')).convert()
-
-
 # Игровой цикл
 running = True
 while running:
-    # Обработка событий (ввода данных)
+    # запускаем игровой цикл с заданной частотой кадров в секунду
+    clock.tick(FPS)
+    # Обработка событий ввода данных
     for event in pygame.event.get():
-        # проверка на закрытие окна
+        # Проверка на закрытие окна пользователем
         if event.type == pygame.QUIT:
             running = False
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
                 player.shoot()
+
     # Обновление
-    clock.tick(FPS)
     all_sprites.update()
-    # Проверяем, консулся ли спрайт-враг спрайта-игрока и спрайта-патрона
+
+    # Проверка на столкновение пули и моба
     hits = pygame.sprite.groupcollide(mobs, bullets, True, True)
     for hit in hits:
         m = Mob()
         all_sprites.add(m)
         mobs.add(m)
-    # Проверяем, консулся ли спрайт-враг спрайта-игрока
+
+    # Проверка на столкновение игрока и моба
     hits = pygame.sprite.spritecollide(player, mobs, False, pygame.sprite.collide_circle)
     if hits:
         running = False
 
-    # Рэндер/отрисовка
+    # Отрисовка / рендер
     screen.fill(BLACK)
     screen.blit(background, background_rect)
     all_sprites.draw(screen)
-    # *после* отрисовки чего-либо на экране, переворачиваем наш дисплей
+    # *после* отрисовки чего-либо, переворачиваем дисплей
     pygame.display.flip()
-
 
 pygame.quit()
