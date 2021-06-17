@@ -1,7 +1,7 @@
 # Шаблон для создания проектов в Pygame
 import pygame
 import random
-
+from os import path
 
 WIDTH = 480 # ширина окна с игрой
 HEIGHT = 600 # высота окна с игрой
@@ -14,8 +14,8 @@ RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 YELLOW = (255, 255, 0)
-
-
+# Задаём путь до каталога с изображениями
+img_dir = path.join(path.dirname(__file__), 'img')
 
 # инициализация pygame и создание окна
 pygame.init()
@@ -102,7 +102,9 @@ for i in range(8):
     all_sprites.add(m)
     mobs.add(m)
 
-
+# Загрузка всей игровой графики
+background = pygame.image.load(path.join(img_dir, 'starfield.png')).convert()
+background_rect = background.get_rect()
 
 
 # Игровой цикл
@@ -127,6 +129,7 @@ while running:
         mobs.add(m)
     # Рэндер/отрисовка
     screen.fill(BLACK)
+    screen.blit(background, background_rect)
     all_sprites.draw(screen)
     # *после* отрисовки чего-либо на экране, переворачиваем наш дисплей
     pygame.display.flip()
