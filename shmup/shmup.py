@@ -26,6 +26,17 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Shmup!")
 clock = pygame.time.Clock()
 
+font_name = pygame.font.match_font('arial')
+
+
+def draw_text(surf, text, size, x, y):
+    font = pygame.font.Font(font_name, size)
+    text_surface = font.render(text, True, WHITE)
+    text_rect = text_surface.get_rect()
+    text_rect.midtop = (x, y)
+    surf.blit(text_surface, text_rect)
+
+
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
@@ -94,6 +105,7 @@ class Mob(pygame.sprite.Sprite):
             self.rect.y = random.randrange(-100, -40)
             self.speedy = random.randrange(1, 8)
 
+
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, x, y):
         pygame.sprite.Sprite.__init__(self)
@@ -131,6 +143,7 @@ for i in range(8):
     m = Mob()
     all_sprites.add(m)
     mobs.add(m)
+score = 0
 
 # Игровой цикл
 running = True
@@ -152,6 +165,7 @@ while running:
     # Проверка на столкновение пули и моба
     hits = pygame.sprite.groupcollide(mobs, bullets, True, True)
     for hit in hits:
+        score += 50 - hit.radius
         m = Mob()
         all_sprites.add(m)
         mobs.add(m)
