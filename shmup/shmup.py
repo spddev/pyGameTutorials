@@ -179,6 +179,7 @@ while running:
     screen.fill(BLACK)
     screen.blit(background, background_rect)
     all_sprites.draw(screen)
+    draw_text(screen, str(score), 18, WIDTH / 2, 10 )
     # *после* отрисовки чего-либо, переворачиваем дисплей
     pygame.display.flip()
 
